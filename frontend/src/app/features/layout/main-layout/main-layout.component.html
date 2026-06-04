@@ -1,0 +1,110 @@
+<div class="min-h-screen bg-slate-50">
+  <div
+    *ngIf="isSidebarOpen()"
+    class="fixed inset-0 z-40 bg-slate-950/50 lg:hidden"
+    (click)="closeSidebar()"
+  ></div>
+
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transform transition-transform duration-300 lg:translate-x-0"
+    [class.translate-x-0]="isSidebarOpen()"
+    [class.-translate-x-full]="!isSidebarOpen()"
+  >
+    <div class="flex h-full flex-col">
+      <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 font-bold">
+            PM
+          </div>
+
+          <div>
+            <p class="text-sm font-bold tracking-wide">Project Management</p>
+            <p class="text-xs text-slate-400">Workspace</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="rounded-lg p-2 text-slate-300 hover:bg-white/10 lg:hidden"
+          (click)="toggleSidebar()"
+        >
+          <lucide-icon [name]="XIcon" class="h-5 w-5"></lucide-icon>
+        </button>
+      </div>
+
+      <nav class="flex-1 space-y-1 overflow-y-auto px-4 py-5">
+        <a
+          *ngFor="let item of navItems"
+          [routerLink]="item.path"
+          routerLinkActive="bg-blue-600 text-white shadow-lg shadow-blue-950/30"
+          class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+        >
+          <lucide-icon [name]="item.icon" class="h-5 w-5"></lucide-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </nav>
+
+      <div class="border-t border-white/10 p-4">
+        <div class="mb-4 rounded-2xl bg-white/5 p-4">
+          <p class="text-sm font-semibold">{{ user()?.name || 'User' }}</p>
+          <p class="mt-1 text-xs capitalize text-slate-400">
+            {{ user()?.role?.toLowerCase() || 'member' }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="logout()"
+          class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-red-500/10 hover:text-red-300"
+        >
+          <lucide-icon [name]="LogOutIcon" class="h-5 w-5"></lucide-icon>
+          Logout
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="lg:pl-72">
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+      <div class="flex h-16 items-center gap-4 px-4 sm:px-6">
+        <button
+          type="button"
+          class="rounded-xl p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+          (click)="toggleSidebar()"
+        >
+          <lucide-icon [name]="MenuIcon" class="h-6 w-6"></lucide-icon>
+        </button>
+
+        <div>
+          <h1 class="text-lg font-bold text-slate-950 sm:text-xl">
+            {{ pageTitle() }}
+          </h1>
+          <p class="hidden text-xs text-slate-500 sm:block">
+            Manage projects, tasks, team members, and progress.
+          </p>
+        </div>
+
+        <div class="ml-auto hidden max-w-sm flex-1 items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 md:flex">
+          <lucide-icon [name]="SearchIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
+          <input
+            type="text"
+            placeholder="Search projects, tasks, or people"
+            class="w-full bg-transparent px-3 py-2 text-sm outline-none placeholder:text-slate-400"
+          />
+        </div>
+
+        <button class="rounded-2xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50">
+          <lucide-icon [name]="BellIcon" class="h-5 w-5"></lucide-icon>
+        </button>
+
+        <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 font-bold text-blue-700">
+          {{ user()?.name?.charAt(0) || 'U' }}
+        </div>
+      </div>
+    </header>
+
+    <main class="min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,144 @@
+<div class="space-y-6">
+  <section class="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-950">Projects</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Manage all projects, owners, team members, progress, and delivery status.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+    >
+      <lucide-icon [name]="PlusIcon" class="h-5 w-5"></lucide-icon>
+      New Project
+    </button>
+  </section>
+
+  <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 lg:max-w-md">
+        <lucide-icon [name]="SearchIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
+
+        <input
+          type="text"
+          placeholder="Search by project, owner, or description"
+          class="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-slate-400"
+          [value]="searchTerm()"
+          (input)="setSearchTerm($event)"
+        />
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button
+          *ngFor="let status of statuses"
+          type="button"
+          (click)="setStatus(status)"
+          class="rounded-2xl px-4 py-2 text-sm font-semibold transition"
+          [ngClass]="
+            selectedStatus() === status
+              ? 'bg-slate-950 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          "
+        >
+          {{ status }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section
+    *ngIf="filteredProjects().length > 0; else emptyState"
+    class="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+  >
+    <article
+      *ngFor="let project of filteredProjects()"
+      class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <span
+            class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
+            [ngClass]="getStatusClass(project.status)"
+          >
+            {{ project.status }}
+          </span>
+
+          <h3 class="mt-4 text-lg font-bold text-slate-950">
+            {{ project.name }}
+          </h3>
+
+          <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+            {{ project.description }}
+          </p>
+        </div>
+
+        <a
+          [routerLink]="['/projects', project.id]"
+          class="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
+        >
+          <lucide-icon [name]="ArrowIcon" class="h-5 w-5"></lucide-icon>
+        </a>
+      </div>
+
+      <div class="mt-5">
+        <div class="mb-2 flex justify-between text-xs font-medium text-slate-500">
+          <span>Progress</span>
+          <span>{{ project.progress }}%</span>
+        </div>
+
+        <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            class="h-full rounded-full bg-blue-600"
+            [style.width.%]="project.progress"
+          ></div>
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <div class="rounded-2xl bg-slate-50 p-3">
+          <p class="text-xs text-slate-500">Owner</p>
+          <p class="mt-1 truncate text-sm font-semibold text-slate-950">
+            {{ project.owner }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl bg-slate-50 p-3">
+          <p class="text-xs text-slate-500">Tasks</p>
+          <p class="mt-1 text-sm font-semibold text-slate-950">
+            {{ project.tasks }}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <div class="flex items-center gap-1.5">
+          <lucide-icon [name]="UsersIcon" class="h-4 w-4"></lucide-icon>
+          {{ project.members }} members
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <lucide-icon [name]="CalendarIcon" class="h-4 w-4"></lucide-icon>
+          {{ project.dueDate }}
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #emptyState>
+    <section class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+        <lucide-icon [name]="FilterIcon" class="h-7 w-7 text-slate-500"></lucide-icon>
+      </div>
+
+      <h3 class="mt-4 text-lg font-bold text-slate-950">
+        No projects found
+      </h3>
+
+      <p class="mt-2 text-sm text-slate-500">
+        Try changing your search or status filter.
+      </p>
+    </section>
+  </ng-template>
+</div>

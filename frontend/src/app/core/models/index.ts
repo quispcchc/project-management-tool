@@ -1,69 +1,82 @@
-export type UserRole = 'SUPER_ADMIN' | 'MANAGER' | 'TEAM_MEMBER';
-export type ProjectStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED';
-export type ProjectPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'REVIEW' | 'DONE';
-export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type ProjectStatus =
+  | 'Planning'
+  | 'In Progress'
+  | 'On Track'
+  | 'At Risk'
+  | 'Delayed'
+  | 'Completed';
+
+export type TaskStatus =
+  | 'Todo'
+  | 'In Progress'
+  | 'Review'
+  | 'Done';
+
+export type Priority =
+  | 'High'
+  | 'Medium'
+  | 'Low';
+
+export type UserRole =
+  | 'Admin'
+  | 'Manager'
+  | 'Member';
+
+export type TeamMemberStatus =
+  | 'Active'
+  | 'Away'
+  | 'Inactive';
 
 export interface User {
-  id: string;
-  email: string;
+  id: number | string;
   name: string;
+  email: string;
   role: UserRole;
 }
 
 export interface Project {
-  id: string;
+  id: number | string;
   name: string;
-  description?: string;
-  clientName?: string;
-  startDate?: string;
-  endDate?: string;
+  description: string;
+  owner: string;
   status: ProjectStatus;
-  priority: ProjectPriority;
-  ownerId: string;
-  owner?: Partial<User>;
-  notes?: string;
-  members?: ProjectMember[];
-  tasks?: Task[];
-  _count?: { tasks: number };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProjectMember {
-  id: string;
-  projectId: string;
-  userId: string;
-  user?: Partial<User>;
-  roleInProject: string;
-  responsibility?: string;
-  allocation: number;
-  isActive: boolean;
+  progress: number;
+  members: number;
+  tasks: number;
+  dueDate: string;
 }
 
 export interface Task {
-  id: string;
-  projectId: string;
-  project?: Partial<Project>;
+  id: number | string;
   title: string;
   description?: string;
-  assignedId?: string;
-  assignedTo?: Partial<User>;
-  dueDate?: string;
-  priority: TaskPriority;
+  project?: string;
+  projectId?: number | string;
+  assignee: string;
+  assigneeId?: number | string;
   status: TaskStatus;
-  createdDate: string;
-  updatedDate: string;
+  priority: Priority;
+  dueDate: string;
+}
+
+export interface TeamMember {
+  id: number | string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  activeProjects: number;
+  status: TeamMemberStatus;
+  initials: string;
 }
 
 export interface ActivityLog {
-  id: string;
-  projectId?: string;
-  project?: { name: string };
-  userId: string;
-  user: { name: string };
+  id: number | string;
+  userId?: number | string;
+  userName: string;
   action: string;
-  details?: string;
+  entityType: 'Project' | 'Task' | 'User' | 'Team';
+  entityName: string;
   createdAt: string;
 }
 
@@ -71,7 +84,9 @@ export interface DashboardStats {
   totalProjects: number;
   activeProjects: number;
   completedProjects: number;
+  totalTasks: number;
+  completedTasks: number;
   pendingTasks: number;
   overdueTasks: number;
-  completedThisWeek: number;
+  teamMembers: number;
 }

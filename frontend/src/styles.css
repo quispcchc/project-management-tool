@@ -1,19 +1,6 @@
-/* @import "tailwindcss"; */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --primary: #3b82f6;
-  --secondary: #64748b;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --info: #06b6d4;
-  --light: #f8fafc;
-  --dark: #0f172a;
-}
+@import "tailwindcss";
 
 body {
-  @apply bg-slate-50 text-slate-900;
+  background-color: #f8fafc;
+  color: #0f172a;
 }
