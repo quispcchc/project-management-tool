@@ -124,10 +124,10 @@ export class DashboardComponent {
 
   getStatusClass(status: ProjectSummary['status']): string {
     const classes = {
-      'On Track': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-      'At Risk': 'bg-amber-50 text-amber-700 ring-amber-600/20',
+      'On Track': 'bg-teal-50 text-teal-700 ring-teal-600/20',
+      'At Risk': 'bg-orange-50 text-orange-700 ring-orange-600/20',
       Delayed: 'bg-red-50 text-red-700 ring-red-600/20',
-      Completed: 'bg-blue-50 text-blue-700 ring-blue-600/20'
+      Completed: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
     };
 
     return classes[status];

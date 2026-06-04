@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS "Project" (
     status "ProjectStatus" DEFAULT 'NOT_STARTED',
     priority "ProjectPriority" DEFAULT 'MEDIUM',
     notes TEXT,
+    requirements TEXT,
     "ownerId" UUID NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

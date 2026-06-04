@@ -37,13 +37,22 @@ export interface User {
 export interface Project {
   id: number | string;
   name: string;
-  description: string;
-  owner: string;
-  status: ProjectStatus;
-  progress: number;
-  members: number;
-  tasks: number;
-  dueDate: string;
+  description?: string | null;
+  clientName?: string | null;
+  status: string;
+  displayStatus?: string;
+  priority?: string;
+  owner?: string;
+  members?: number;
+  tasks?: number;
+  progress?: number;
+  dueDate?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  notes?: string | null;
+  requirements?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Task {

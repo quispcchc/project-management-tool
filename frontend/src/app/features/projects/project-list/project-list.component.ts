@@ -1,6 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideAngularModule,
   Plus,
@@ -8,36 +9,38 @@ import {
   Filter,
   CalendarDays,
   Users,
-  ArrowUpRight
+  ArrowUpRight,
+  Trash2,
+  X
 } from 'lucide-angular';
+import { ProjectService } from '../../../core/services/project.service';
+import { Project } from '../../../core/models';
 
 type ProjectStatus = 'Planning' | 'In Progress' | 'At Risk' | 'Completed';
-
-type Project = {
-  id: number;
-  name: string;
-  description: string;
-  owner: string;
-  status: ProjectStatus;
-  progress: number;
-  members: number;
-  tasks: number;
-  dueDate: string;
-};
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './project-list.component.html'
 })
 export class ProjectListComponent {
+  private projectService = inject(ProjectService);
+  private fb = inject(FormBuilder);
+
   readonly PlusIcon = Plus;
   readonly SearchIcon = Search;
   readonly FilterIcon = Filter;
   readonly CalendarIcon = CalendarDays;
   readonly UsersIcon = Users;
   readonly ArrowIcon = ArrowUpRight;
+  readonly TrashIcon = Trash2;
+  readonly XIcon = X;
+
+  loading = signal(false);
+  saving = signal(false);
+  error = signal('');
+  isCreateModalOpen = signal(false);
 
   searchTerm = signal('');
   selectedStatus = signal<'All' | ProjectStatus>('All');
@@ -50,68 +53,113 @@ export class ProjectListComponent {
     'Completed'
   ];
 
-  projects = signal<Project[]>([
-    {
-      id: 1,
-      name: 'Tax Clinic Booking System',
-      description: 'Multi-clinic appointment booking, scheduling, reschedule, and cancellation system.',
-      owner: 'Al Haq',
-      status: 'In Progress',
-      progress: 78,
-      members: 5,
-      tasks: 42,
-      dueDate: 'Jun 28, 2026'
-    },
-    {
-      id: 2,
-      name: 'Sales Bot Platform',
-      description: 'AI-powered WhatsApp sales assistant with product knowledge and lead capture.',
-      owner: 'Sindhura',
-      status: 'At Risk',
-      progress: 52,
-      members: 3,
-      tasks: 26,
-      dueDate: 'Jul 12, 2026'
-    },
-    {
-      id: 3,
-      name: 'Project Management',
-      description: 'Internal project management tool for tracking projects, teams, tasks, and reports.',
-      owner: 'Product Team',
-      status: 'Planning',
-      progress: 35,
-      members: 4,
-      tasks: 19,
-      dueDate: 'Aug 05, 2026'
-    },
-    {
-      id: 4,
-      name: 'Reports Dashboard',
-      description: 'Executive reporting module with project health, workload, and completion trends.',
-      owner: 'Analytics Team',
-      status: 'Completed',
-      progress: 100,
-      members: 2,
-      tasks: 16,
-      dueDate: 'May 20, 2026'
-    }
-  ]);
+  projects = signal<Project[]>([]);
+
+  projectForm = this.fb.group({
+    name: ['', Validators.required],
+    description: [''],
+    clientName: [''],
+    startDate: [''],
+    endDate: [''],
+    status: ['NOT_STARTED', Validators.required],
+    priority: ['MEDIUM', Validators.required],
+    notes: [''],
+    requirements: ['']
+  });
 
   filteredProjects = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
     const status = this.selectedStatus();
 
     return this.projects().filter(project => {
-      const matchesSearch =
-        project.name.toLowerCase().includes(term) ||
-        project.description.toLowerCase().includes(term) ||
-        project.owner.toLowerCase().includes(term);
+      const displayStatus = this.toDisplayStatus(project.displayStatus || project.status);
 
-      const matchesStatus = status === 'All' || project.status === status;
+      const matchesSearch =
+        project.name?.toLowerCase().includes(term) ||
+        project.description?.toLowerCase().includes(term) ||
+        project.owner?.toLowerCase().includes(term);
+
+      const matchesStatus = status === 'All' || displayStatus === status;
 
       return matchesSearch && matchesStatus;
     });
   });
+
+  ngOnInit(): void {
+    this.loadProjects();
+  }
+
+  loadProjects(): void {
+    this.loading.set(true);
+    this.error.set('');
+
+    this.projectService.getProjects().subscribe({
+      next: projects => {
+        this.projects.set(projects);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Unable to load projects.');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  openCreateModal(): void {
+    this.projectForm.reset({
+      name: '',
+      description: '',
+      clientName: '',
+      startDate: '',
+      endDate: '',
+      status: 'NOT_STARTED',
+      priority: 'MEDIUM',
+      notes: '',
+      requirements: ''
+    });
+
+    this.isCreateModalOpen.set(true);
+  }
+
+  closeCreateModal(): void {
+    this.isCreateModalOpen.set(false);
+  }
+
+  createProject(): void {
+    if (this.projectForm.invalid) {
+      this.projectForm.markAllAsTouched();
+      return;
+    }
+
+    this.saving.set(true);
+
+    this.projectService.createProject(this.projectForm.value).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.closeCreateModal();
+        this.loadProjects();
+      },
+      error: () => {
+        this.saving.set(false);
+        this.error.set('Unable to create project.');
+      }
+    });
+  }
+
+  deleteProject(project: Project): void {
+    const confirmed = confirm(`Delete project "${project.name}"?`);
+
+    if (!confirmed) return;
+
+    this.projectService.deleteProject(String(project.id)).subscribe({
+      next: () => {
+        this.projects.update(items => items.filter(item => item.id !== project.id));
+      },
+      error: () => {
+        this.error.set('Unable to delete project.');
+      }
+    });
+  }
 
   setSearchTerm(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -122,14 +170,50 @@ export class ProjectListComponent {
     this.selectedStatus.set(status);
   }
 
-  getStatusClass(status: ProjectStatus): string {
+  toDisplayStatus(status: string): ProjectStatus {
+    const map: Record<string, ProjectStatus> = {
+      NOT_STARTED: 'Planning',
+      IN_PROGRESS: 'In Progress',
+      ON_HOLD: 'At Risk',
+      COMPLETED: 'Completed',
+      Planning: 'Planning',
+      'In Progress': 'In Progress',
+      'At Risk': 'At Risk',
+      Completed: 'Completed'
+    };
+
+    return map[status] || 'Planning';
+  }
+
+  getStatusClass(status: string): string {
+    const displayStatus = this.toDisplayStatus(status);
+
     const classes: Record<ProjectStatus, string> = {
       Planning: 'bg-slate-100 text-slate-700 ring-slate-600/20',
-      'In Progress': 'bg-blue-50 text-blue-700 ring-blue-600/20',
-      'At Risk': 'bg-amber-50 text-amber-700 ring-amber-600/20',
+      'In Progress': 'bg-teal-50 text-teal-700 ring-teal-600/20',
+      'At Risk': 'bg-orange-50 text-orange-700 ring-orange-600/20',
       Completed: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
     };
 
-    return classes[status];
+    return classes[displayStatus];
+  }
+
+  getPriorityClass(priority?: string): string {
+    switch (priority) {
+      case 'CRITICAL':
+        return 'bg-red-50 text-red-700 ring-red-600/20';
+
+      case 'HIGH':
+        return 'bg-orange-50 text-orange-700 ring-orange-600/20';
+
+      case 'MEDIUM':
+        return 'bg-teal-50 text-teal-700 ring-teal-600/20';
+
+      case 'LOW':
+        return 'bg-slate-100 text-slate-700 ring-slate-600/20';
+
+      default:
+        return 'bg-slate-100 text-slate-700 ring-slate-600/20';
+    }
   }
 }

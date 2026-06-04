@@ -9,7 +9,7 @@
 
     <button
       type="button"
-      class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+      class="inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-700/20 transition hover:bg-teal-800"
     >
       <lucide-icon [name]="PlusIcon" class="h-5 w-5"></lucide-icon>
       Add Member
@@ -17,13 +17,13 @@
   </section>
 
   <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-    <div class="flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 lg:max-w-md">
+    <div class="flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 transition focus-within:border-teal-600 focus-within:ring-4 focus-within:ring-teal-100 lg:max-w-md">
       <lucide-icon [name]="SearchIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
 
       <input
         type="text"
         placeholder="Search by name, email, role, or department"
-        class="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-slate-400"
+        class="w-full bg-transparent px-3 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
         [value]="searchTerm()"
         (input)="setSearchTerm($event)"
       />
@@ -33,10 +33,10 @@
   <section class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
     <article
       *ngFor="let member of filteredMembers()"
-      class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+      class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-teal-100 hover:shadow-md"
     >
       <div class="flex items-start justify-between gap-4">
-        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-lg font-bold text-blue-700">
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-lg font-bold text-teal-700 ring-1 ring-teal-100">
           {{ member.initials }}
         </div>
 
@@ -52,23 +52,23 @@
         {{ member.name }}
       </h3>
 
-      <p class="mt-1 text-sm font-medium text-blue-700">
+      <p class="mt-1 text-sm font-medium text-teal-700">
         {{ member.role }}
       </p>
 
       <div class="mt-5 space-y-3 text-sm text-slate-500">
         <div class="flex items-center gap-2">
-          <lucide-icon [name]="MailIcon" class="h-4 w-4"></lucide-icon>
+          <lucide-icon [name]="MailIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
           <span class="truncate">{{ member.email }}</span>
         </div>
 
         <div class="flex items-center gap-2">
-          <lucide-icon [name]="ShieldIcon" class="h-4 w-4"></lucide-icon>
+          <lucide-icon [name]="ShieldIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
           {{ member.department }}
         </div>
 
         <div class="flex items-center gap-2">
-          <lucide-icon [name]="BriefcaseIcon" class="h-4 w-4"></lucide-icon>
+          <lucide-icon [name]="BriefcaseIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
           {{ member.activeProjects }} active projects
         </div>
       </div>

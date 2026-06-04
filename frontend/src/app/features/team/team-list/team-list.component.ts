@@ -96,8 +96,8 @@ export class TeamListComponent {
 
   getStatusClass(status: TeamMember['status']): string {
     const classes = {
-      Active: 'bg-emerald-50 text-emerald-700',
-      Away: 'bg-amber-50 text-amber-700',
+      Active: 'bg-teal-50 text-teal-700',
+      Away: 'bg-orange-50 text-orange-700',
       Inactive: 'bg-slate-100 text-slate-700'
     };
 

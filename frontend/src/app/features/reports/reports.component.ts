@@ -59,8 +59,8 @@ export class ReportsComponent {
   ];
 
   projectHealth = [
-    { label: 'On Track', value: 5, class: 'bg-emerald-500' },
-    { label: 'At Risk', value: 2, class: 'bg-amber-500' },
+    { label: 'On Track', value: 5, class: 'bg-teal-600' },
+    { label: 'At Risk', value: 2, class: 'bg-orange-500' },
     { label: 'Delayed', value: 1, class: 'bg-red-500' }
   ];
 

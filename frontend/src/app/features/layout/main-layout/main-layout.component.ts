@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Search,
-  Bell
+  Bell,
+  KanbanSquare
 } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -39,6 +40,7 @@ export class MainLayoutComponent {
 
   user = this.authService.currentUser;
 
+  readonly AppIcon = KanbanSquare;
   readonly XIcon = X;
   readonly MenuIcon = Menu;
   readonly LogOutIcon = LogOut;

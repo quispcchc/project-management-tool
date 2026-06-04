@@ -1,137 +1,214 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideAngularModule,
   ArrowLeft,
   CalendarDays,
   Users,
   CheckCircle2,
-  Clock3,
   AlertTriangle,
-  Plus
+  Plus,
+  Trash2,
+  X
 } from 'lucide-angular';
+import { ProjectService } from '../../../core/services/project.service';
+import { UserService } from '../../../core/services/user.service';
+import { User } from '../../../core/models';
 
-type TaskStatus = 'Todo' | 'In Progress' | 'Done';
-type Priority = 'High' | 'Medium' | 'Low';
-
-type ProjectTask = {
-  title: string;
-  assignee: string;
-  status: TaskStatus;
-  priority: Priority;
-  dueDate: string;
+type ProjectMember = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  roleInProject: string;
+  responsibility?: string;
+  allocation?: number;
 };
 
-type TeamMember = {
+type ProjectTask = {
+  id: string;
+  title: string;
+  assignee?: string;
+  status: string;
+  priority: string;
+  dueDate?: string;
+};
+
+type ProjectDetail = {
+  id: string;
   name: string;
-  role: string;
-  initials: string;
+  description?: string;
+  status: string;
+  displayStatus?: string;
+  priority?: string;
+  owner?: string;
+  dueDate?: string;
+  progress: number;
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  members: ProjectMember[];
+  tasks: ProjectTask[];
 };
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './project-detail.component.html'
 })
 export class ProjectDetailComponent {
+  private route = inject(ActivatedRoute);
+  private projectService = inject(ProjectService);
+  private userService = inject(UserService);
+  private fb = inject(FormBuilder);
+
   readonly ArrowLeftIcon = ArrowLeft;
   readonly CalendarIcon = CalendarDays;
   readonly UsersIcon = Users;
   readonly CheckIcon = CheckCircle2;
-  readonly ClockIcon = Clock3;
   readonly AlertIcon = AlertTriangle;
   readonly PlusIcon = Plus;
+  readonly TrashIcon = Trash2;
+  readonly XIcon = X;
 
-  project = {
-    id: 1,
-    name: 'Tax Clinic Booking System',
-    description:
-      'A multi-clinic appointment booking platform with scheduling, client eligibility flow, reschedule, cancellation, and admin dashboard.',
-    owner: 'Al Haq',
-    status: 'In Progress',
-    progress: 78,
-    startDate: 'May 01, 2026',
-    dueDate: 'Jun 28, 2026',
-    totalTasks: 42,
-    completedTasks: 31,
-    pendingTasks: 11
-  };
+  loading = signal(false);
+  error = signal('');
+  project = signal<ProjectDetail | null>(null);
+  users = signal<User[]>([]);
+  isMemberModalOpen = signal(false);
+  savingMember = signal(false);
 
-  teamMembers: TeamMember[] = [
-    { name: 'Al Haq', role: 'Project Manager', initials: 'AH' },
-    { name: 'Sindhura', role: 'Frontend Developer', initials: 'SI' },
-    { name: 'Naveen', role: 'Backend Developer', initials: 'NA' },
-    { name: 'Priya', role: 'QA Analyst', initials: 'PR' }
-  ];
+  memberForm = this.fb.group({
+    userId: ['', Validators.required],
+    roleInProject: ['', Validators.required],
+    responsibility: [''],
+    allocation: [100, [Validators.required, Validators.min(1), Validators.max(100)]]
+  });
 
-  tasks: ProjectTask[] = [
-    {
-      title: 'Create project detail responsive UI',
-      assignee: 'Sindhura',
-      status: 'In Progress',
-      priority: 'High',
-      dueDate: 'Today'
-    },
-    {
-      title: 'Connect project API with frontend',
-      assignee: 'Naveen',
-      status: 'Todo',
-      priority: 'High',
-      dueDate: 'Tomorrow'
-    },
-    {
-      title: 'Test booking reschedule flow',
-      assignee: 'Priya',
-      status: 'Done',
-      priority: 'Medium',
-      dueDate: 'Jun 20'
-    },
-    {
-      title: 'Prepare dashboard report cards',
-      assignee: 'Al Haq',
-      status: 'Todo',
-      priority: 'Low',
-      dueDate: 'This week'
-    }
-  ];
-
-  updates = [
-    {
-      title: 'Frontend layout completed',
-      description: 'Main layout, login screen, and project list page have been designed.',
-      date: 'Today'
-    },
-    {
-      title: 'Backend planning started',
-      description: 'Project, task, user, and report APIs are being planned.',
-      date: 'Yesterday'
-    },
-    {
-      title: 'Initial requirements added',
-      description: 'Project tracking, team members, task status, and reporting were added to scope.',
-      date: 'Jun 18'
-    }
-  ];
-
-  getTaskStatusClass(status: TaskStatus): string {
-    const classes: Record<TaskStatus, string> = {
-      Todo: 'bg-slate-100 text-slate-700',
-      'In Progress': 'bg-blue-50 text-blue-700',
-      Done: 'bg-emerald-50 text-emerald-700'
-    };
-
-    return classes[status];
+  ngOnInit(): void {
+    this.loadProject();
+    this.loadUsers();
   }
 
-  getPriorityClass(priority: Priority): string {
-    const classes: Record<Priority, string> = {
-      High: 'bg-red-50 text-red-700',
-      Medium: 'bg-amber-50 text-amber-700',
-      Low: 'bg-slate-100 text-slate-700'
+  loadProject(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+
+    if (!id) {
+      this.error.set('Project id is missing.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set('');
+
+    this.projectService.getProject(id).subscribe({
+      next: project => {
+        this.project.set(project as unknown as ProjectDetail);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Unable to load project.');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  loadUsers(): void {
+    this.userService.getUsers().subscribe({
+      next: users => this.users.set(users),
+      error: () => this.error.set('Unable to load users.')
+    });
+  }
+
+  openMemberModal(): void {
+    this.memberForm.reset({
+      userId: '',
+      roleInProject: '',
+      responsibility: '',
+      allocation: 100
+    });
+
+    this.isMemberModalOpen.set(true);
+  }
+
+  closeMemberModal(): void {
+    this.isMemberModalOpen.set(false);
+  }
+
+  addMember(): void {
+    const project = this.project();
+
+    if (!project) return;
+
+    if (this.memberForm.invalid) {
+      this.memberForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingMember.set(true);
+
+    this.projectService.addMember(project.id, this.memberForm.value).subscribe({
+      next: () => {
+        this.savingMember.set(false);
+        this.closeMemberModal();
+        this.loadProject();
+      },
+      error: () => {
+        this.savingMember.set(false);
+        this.error.set('Unable to add member.');
+      }
+    });
+  }
+
+  removeMember(member: ProjectMember): void {
+    const project = this.project();
+
+    if (!project) return;
+
+    const confirmed = confirm(`Remove ${member.name} from this project?`);
+    if (!confirmed) return;
+
+    this.projectService.removeMember(project.id, member.id).subscribe({
+      next: () => this.loadProject(),
+      error: () => this.error.set('Unable to remove member.')
+    });
+  }
+
+  getInitials(name?: string): string {
+    if (!name) return 'U';
+
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  getTaskStatusClass(status: string): string {
+    const classes: Record<string, string> = {
+      TODO: 'bg-slate-100 text-slate-700',
+      IN_PROGRESS: 'bg-teal-50 text-teal-700',
+      REVIEW: 'bg-orange-50 text-orange-700',
+      DONE: 'bg-emerald-50 text-emerald-700',
+      BLOCKED: 'bg-red-50 text-red-700'
     };
 
-    return classes[priority];
+    return classes[status] || 'bg-slate-100 text-slate-700';
+  }
+
+  getPriorityClass(priority: string): string {
+    const classes: Record<string, string> = {
+      HIGH: 'bg-red-50 text-red-700',
+      CRITICAL: 'bg-red-100 text-red-800',
+      MEDIUM: 'bg-orange-50 text-orange-700',
+      LOW: 'bg-slate-100 text-slate-700'
+    };
+
+    return classes[priority] || 'bg-slate-100 text-slate-700';
   }
 }

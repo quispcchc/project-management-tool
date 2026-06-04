@@ -1,30 +1,43 @@
 <div class="space-y-6">
-  <section class="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-    <div>
-      <h2 class="text-2xl font-bold text-slate-950">Projects</h2>
-      <p class="mt-1 text-sm text-slate-500">
-        Manage all projects, owners, team members, progress, and delivery status.
-      </p>
-    </div>
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-teal-800 p-6 text-white shadow-xl">
+    <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-teal-400/20 blur-3xl"></div>
+    <div class="absolute bottom-0 right-1/3 h-40 w-40 rounded-full bg-orange-400/10 blur-3xl"></div>
 
-    <button
-      type="button"
-      class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-    >
-      <lucide-icon [name]="PlusIcon" class="h-5 w-5"></lucide-icon>
-      New Project
-    </button>
+    <div class="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-medium text-teal-100">Projects</p>
+        <h2 class="mt-2 text-2xl font-bold sm:text-3xl">
+          Manage all your projects
+        </h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-200">
+          Track owners, team members, tasks, priority, progress, and project delivery status.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="openCreateModal()"
+        class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-100"
+      >
+        <lucide-icon [name]="PlusIcon" class="h-5 w-5"></lucide-icon>
+        New Project
+      </button>
+    </div>
   </section>
+
+  <div *ngIf="error()" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+    {{ error() }}
+  </div>
 
   <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div class="flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 lg:max-w-md">
+      <div class="flex w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 transition focus-within:border-teal-600 focus-within:ring-4 focus-within:ring-teal-100 lg:max-w-md">
         <lucide-icon [name]="SearchIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
 
         <input
           type="text"
           placeholder="Search by project, owner, or description"
-          class="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-slate-400"
+          class="w-full bg-transparent px-3 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
           [value]="searchTerm()"
           (input)="setSearchTerm($event)"
         />
@@ -38,7 +51,7 @@
           class="rounded-2xl px-4 py-2 text-sm font-semibold transition"
           [ngClass]="
             selectedStatus() === status
-              ? 'bg-slate-950 text-white'
+              ? 'bg-teal-700 text-white shadow-sm shadow-teal-700/20'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           "
         >
@@ -48,50 +61,73 @@
     </div>
   </section>
 
+  <section *ngIf="loading()" class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+    <p class="text-sm font-medium text-slate-500">Loading projects...</p>
+  </section>
+
   <section
-    *ngIf="filteredProjects().length > 0; else emptyState"
+    *ngIf="!loading() && filteredProjects().length > 0; else emptyState"
     class="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
   >
     <article
       *ngFor="let project of filteredProjects()"
-      class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+      class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-teal-100 hover:shadow-md"
     >
       <div class="flex items-start justify-between gap-4">
         <div>
+        <div class="flex flex-wrap gap-2">
           <span
             class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
             [ngClass]="getStatusClass(project.status)"
           >
-            {{ project.status }}
+            {{ project.displayStatus || toDisplayStatus(project.status) }}
           </span>
+
+          <span
+            class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
+            [ngClass]="getPriorityClass(project.priority)"
+          >
+            {{ project.priority }}
+          </span>
+        </div>
 
           <h3 class="mt-4 text-lg font-bold text-slate-950">
             {{ project.name }}
           </h3>
 
           <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
-            {{ project.description }}
+            {{ project.description || 'No description added.' }}
           </p>
         </div>
 
-        <a
-          [routerLink]="['/projects', project.id]"
-          class="rounded-2xl p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
-        >
-          <lucide-icon [name]="ArrowIcon" class="h-5 w-5"></lucide-icon>
-        </a>
+        <div class="flex gap-1">
+          <a
+            [routerLink]="['/projects', project.id]"
+            class="rounded-2xl p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+          >
+            <lucide-icon [name]="ArrowIcon" class="h-5 w-5"></lucide-icon>
+          </a>
+
+          <button
+            type="button"
+            (click)="deleteProject(project)"
+            class="rounded-2xl p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-700"
+          >
+            <lucide-icon [name]="TrashIcon" class="h-5 w-5"></lucide-icon>
+          </button>
+        </div>
       </div>
 
       <div class="mt-5">
         <div class="mb-2 flex justify-between text-xs font-medium text-slate-500">
           <span>Progress</span>
-          <span>{{ project.progress }}%</span>
+          <span>{{ project.progress || 0 }}%</span>
         </div>
 
         <div class="h-2 overflow-hidden rounded-full bg-slate-100">
           <div
-            class="h-full rounded-full bg-blue-600"
-            [style.width.%]="project.progress"
+            class="h-full rounded-full bg-teal-700"
+            [style.width.%]="project.progress || 0"
           ></div>
         </div>
       </div>
@@ -100,36 +136,45 @@
         <div class="rounded-2xl bg-slate-50 p-3">
           <p class="text-xs text-slate-500">Owner</p>
           <p class="mt-1 truncate text-sm font-semibold text-slate-950">
-            {{ project.owner }}
+            {{ project.owner || 'Unassigned' }}
           </p>
         </div>
 
         <div class="rounded-2xl bg-slate-50 p-3">
           <p class="text-xs text-slate-500">Tasks</p>
           <p class="mt-1 text-sm font-semibold text-slate-950">
-            {{ project.tasks }}
+            {{ project.tasks || 0 }}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <div class="rounded-2xl bg-slate-50 p-3">
+          <p class="text-xs text-slate-500">Client</p>
+          <p class="mt-1 truncate text-sm font-semibold text-slate-950">
+            {{ project.clientName || 'Internal' }}
           </p>
         </div>
       </div>
 
       <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs text-slate-500">
         <div class="flex items-center gap-1.5">
-          <lucide-icon [name]="UsersIcon" class="h-4 w-4"></lucide-icon>
-          {{ project.members }} members
+          <lucide-icon [name]="UsersIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
+          {{ project.members || 0 }} members
         </div>
 
         <div class="flex items-center gap-1.5">
-          <lucide-icon [name]="CalendarIcon" class="h-4 w-4"></lucide-icon>
-          {{ project.dueDate }}
+          <lucide-icon [name]="CalendarIcon" class="h-4 w-4 text-slate-400"></lucide-icon>
+          {{ project.dueDate || 'No due date' }}
         </div>
       </div>
     </article>
   </section>
 
   <ng-template #emptyState>
-    <section class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
-      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-        <lucide-icon [name]="FilterIcon" class="h-7 w-7 text-slate-500"></lucide-icon>
+    <section *ngIf="!loading()" class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50">
+        <lucide-icon [name]="FilterIcon" class="h-7 w-7 text-teal-700"></lucide-icon>
       </div>
 
       <h3 class="mt-4 text-lg font-bold text-slate-950">
@@ -137,8 +182,141 @@
       </h3>
 
       <p class="mt-2 text-sm text-slate-500">
-        Try changing your search or status filter.
+        Create a new project or adjust your search filter.
       </p>
     </section>
   </ng-template>
+
+  <div
+    *ngIf="isCreateModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6"
+  >
+    <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 p-5">
+        <div>
+          <h3 class="text-lg font-bold text-slate-950">Create New Project</h3>
+          <p class="mt-1 text-sm text-slate-500">Add project details and delivery information.</p>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeCreateModal()"
+          class="rounded-2xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <lucide-icon [name]="XIcon" class="h-5 w-5"></lucide-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="projectForm" (ngSubmit)="createProject()" class="space-y-5 p-5">
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-slate-700">Project Name</label>
+          <input
+            formControlName="name"
+            type="text"
+            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+            placeholder="Enter project name"
+          />
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-slate-700">Description</label>
+          <textarea
+            formControlName="description"
+            rows="3"
+            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+            placeholder="Project description"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-slate-700">
+            Requirements
+          </label>
+
+          <textarea
+            formControlName="requirements"
+            rows="4"
+            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+            placeholder="Business requirements, scope, features, acceptance criteria..."
+          ></textarea>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Client Name</label>
+            <input
+              formControlName="clientName"
+              type="text"
+              class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+              placeholder="Client or internal team"
+            />
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Priority</label>
+            <select
+              formControlName="priority"
+              class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+            >
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Start Date</label>
+            <input
+              formControlName="startDate"
+              type="date"
+              class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+            />
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">End Date</label>
+            <input
+              formControlName="endDate"
+              type="date"
+              class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-slate-700">Status</label>
+          <select
+            formControlName="status"
+            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+          >
+            <option value="NOT_STARTED">Planning</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="ON_HOLD">At Risk</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3 border-t border-slate-100 pt-5">
+          <button
+            type="button"
+            (click)="closeCreateModal()"
+            class="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="saving()"
+            class="rounded-2xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-teal-700/20 hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            {{ saving() ? 'Creating...' : 'Create Project' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
