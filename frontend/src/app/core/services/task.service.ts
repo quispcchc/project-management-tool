@@ -1,17 +1,21 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Task } from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaskService {
-  private apiUrl = 'http://localhost:5000/api/tasks';
+  private apiUrl = 'http://localhost:3000/api/tasks';
 
   constructor(private http: HttpClient) {}
 
-  getTasks(projectId?: string) {
-    const params = projectId ? { projectId } : {};
+  getTasks(projectId?: string): Observable<Task[]> {
+    let params = new HttpParams();
+    if (projectId) {
+      params = params.set('projectId', projectId);
+    }
     return this.http.get<Task[]>(this.apiUrl, { params });
   }
 

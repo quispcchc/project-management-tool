@@ -95,9 +95,9 @@ export class TaskBoardComponent implements OnInit {
   }
 
   loadTasks() {
-    this.taskService.getTasks().subscribe(tasks => {
+    this.taskService.getTasks().subscribe((tasks: Task[]) => {
       this.columns.forEach(col => {
-        col.tasks = tasks.filter(t => t.status === col.status);
+        col.tasks = tasks.filter((t: Task) => t.status === col.status);
       });
     });
   }

@@ -1,13 +1,11 @@
 import { Response } from 'express';
-import prisma from '../prisma';
+import db from '../db';
 import { AuthRequest } from '../middleware/auth';
 
 export const getUsers = async (req: AuthRequest, res: Response) => {
   try {
-    const users = await prisma.user.findMany({
-      select: { id: true, email: true, name: true, role: true }
-    });
-    res.json(users);
+    const result = await db.query('SELECT id, email, name, role FROM "User"');
+    res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -15,15 +13,18 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
 
 export const getActivityLogs = async (req: AuthRequest, res: Response) => {
   try {
-    const logs = await prisma.activityLog.findMany({
-      take: 50,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { name: true } },
-        project: { select: { name: true } }
-      }
-    });
-    res.json(logs);
+    const queryText = `
+      SELECT al.*, 
+             json_build_object('name', u.name) as user,
+             json_build_object('name', p.name) as project
+      FROM "ActivityLog" al
+      JOIN "User" u ON al."userId" = u.id
+      LEFT JOIN "Project" p ON al."projectId" = p.id
+      ORDER BY al."createdAt" DESC
+      LIMIT 50
+    `;
+    const result = await db.query(queryText);
+    res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -31,36 +32,25 @@ export const getActivityLogs = async (req: AuthRequest, res: Response) => {
 
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
-    const totalProjects = await prisma.project.count();
-    const activeProjects = await prisma.project.count({ where: { status: 'IN_PROGRESS' } });
-    const completedProjects = await prisma.project.count({ where: { status: 'COMPLETED' } });
-    const pendingTasks = await prisma.task.count({ where: { status: { not: 'DONE' } } });
-    
-    // Overdue tasks (due date before now and not done)
-    const overdueTasks = await prisma.task.count({
-      where: {
-        status: { not: 'DONE' },
-        dueDate: { lt: new Date() }
-      }
-    });
-
-    // Tasks completed this week
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const completedThisWeek = await prisma.task.count({
-      where: {
-        status: 'DONE',
-        updatedDate: { gte: oneWeekAgo }
-      }
-    });
+    const statsQuery = `
+      SELECT
+        (SELECT count(*) FROM "Project") as total_projects,
+        (SELECT count(*) FROM "Project" WHERE status = 'IN_PROGRESS') as active_projects,
+        (SELECT count(*) FROM "Project" WHERE status = 'COMPLETED') as completed_projects,
+        (SELECT count(*) FROM "Task" WHERE status != 'DONE') as pending_tasks,
+        (SELECT count(*) FROM "Task" WHERE status != 'DONE' AND "dueDate" < NOW()) as overdue_tasks,
+        (SELECT count(*) FROM "Task" WHERE status = 'DONE' AND "updatedDate" >= NOW() - INTERVAL '7 days') as completed_this_week
+    `;
+    const result = await db.query(statsQuery);
+    const stats = result.rows[0];
 
     res.json({
-      totalProjects,
-      activeProjects,
-      completedProjects,
-      pendingTasks,
-      overdueTasks,
-      completedThisWeek
+      totalProjects: parseInt(stats.total_projects),
+      activeProjects: parseInt(stats.active_projects),
+      completedProjects: parseInt(stats.completed_projects),
+      pendingTasks: parseInt(stats.pending_tasks),
+      overdueTasks: parseInt(stats.overdue_tasks),
+      completedThisWeek: parseInt(stats.completed_this_week)
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });

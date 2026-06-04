@@ -6,7 +6,7 @@ import { Project } from '../models';
   providedIn: 'root'
 })
 export class ProjectService {
-  private apiUrl = 'http://localhost:5000/api/projects';
+  private apiUrl = 'http://localhost:3000/api/projects';
 
   constructor(private http: HttpClient) {}
 

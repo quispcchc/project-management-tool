@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { LucideAngularModule, LayoutDashboard, Briefcase, CheckSquare, Users, BarChart3, Settings, LogOut, Menu, X } from 'lucide-angular';
@@ -62,6 +62,9 @@ import { AuthService } from '../../../core/services/auth.service';
   `
 })
 export class MainLayoutComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   isSidebarOpen = signal(true);
   user = this.authService.currentUser;
 
@@ -77,8 +80,6 @@ export class MainLayoutComponent {
     { label: 'Reports', path: '/reports', icon: BarChart3 },
     { label: 'Settings', path: '/settings', icon: Settings }
   ];
-
-  constructor(private authService: AuthService, private router: Router) {}
 
   toggleSidebar() {
     this.isSidebarOpen.set(!this.isSidebarOpen());

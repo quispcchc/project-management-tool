@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import prisma from '../prisma';
+import db from '../db';
 import { generateToken } from '../utils/jwt';
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const result = await db.query('SELECT * FROM "User" WHERE email = $1', [email]);
+    const user = result.rows[0];
+    
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -36,20 +38,17 @@ export const register = async (req: Request, res: Response) => {
   const { email, password, name, role } = req.body;
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    const existingUserResult = await db.query('SELECT id FROM "User" WHERE email = $1', [email]);
+    if (existingUserResult.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role: role || 'TEAM_MEMBER'
-      }
-    });
+    const result = await db.query(
+      'INSERT INTO "User" (id, email, password, name, role, "createdAt", "updatedAt") VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW()) RETURNING id, email, name, role',
+      [email, hashedPassword, name, role || 'TEAM_MEMBER']
+    );
+    const user = result.rows[0];
 
     const token = generateToken({ id: user.id, email: user.email, role: user.role });
     res.status(201).json({
