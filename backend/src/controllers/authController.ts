@@ -7,14 +7,17 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
+    console.log("email provided is...", email);
     const result = await db.query('SELECT * FROM "User" WHERE email = $1', [email]);
+    console.log("result for that email is...", result.rows[0]);
     const user = result.rows[0];
     
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password.trim(), user.password);
+    console.log("is password mathced or not..", isMatch);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

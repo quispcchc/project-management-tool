@@ -2,14 +2,43 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Enums
-CREATE TYPE "UserRole" AS ENUM ('SUPER_ADMIN', 'MANAGER', 'TEAM_MEMBER');
-CREATE TYPE "ProjectStatus" AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED');
-CREATE TYPE "ProjectPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
-CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'IN_PROGRESS', 'BLOCKED', 'REVIEW', 'DONE');
-CREATE TYPE "TaskPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'UserRole') THEN
+        CREATE TYPE "UserRole" AS ENUM ('SUPER_ADMIN', 'MANAGER', 'TEAM_MEMBER');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ProjectStatus') THEN
+        CREATE TYPE "ProjectStatus" AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ProjectPriority') THEN
+        CREATE TYPE "ProjectPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'TaskStatus') THEN
+        CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'IN_PROGRESS', 'BLOCKED', 'REVIEW', 'DONE');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'TaskPriority') THEN
+        CREATE TYPE "TaskPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+    END IF;
+END $$;
 
 -- User Table
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
@@ -20,7 +49,7 @@ CREATE TABLE "User" (
 );
 
 -- Project Table
-CREATE TABLE "Project" (
+CREATE TABLE IF NOT EXISTS "Project" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
@@ -36,7 +65,7 @@ CREATE TABLE "Project" (
 );
 
 -- ProjectMember Table
-CREATE TABLE "ProjectMember" (
+CREATE TABLE IF NOT EXISTS "ProjectMember" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "projectId" UUID NOT NULL REFERENCES "Project"(id) ON DELETE CASCADE,
     "userId" UUID NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
@@ -48,7 +77,7 @@ CREATE TABLE "ProjectMember" (
 );
 
 -- Task Table
-CREATE TABLE "Task" (
+CREATE TABLE IF NOT EXISTS "Task" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "projectId" UUID NOT NULL REFERENCES "Project"(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
@@ -62,7 +91,7 @@ CREATE TABLE "Task" (
 );
 
 -- TaskComment Table
-CREATE TABLE "TaskComment" (
+CREATE TABLE IF NOT EXISTS "TaskComment" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "taskId" UUID NOT NULL REFERENCES "Task"(id) ON DELETE CASCADE,
     "userId" UUID NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
@@ -71,7 +100,7 @@ CREATE TABLE "TaskComment" (
 );
 
 -- ActivityLog Table
-CREATE TABLE "ActivityLog" (
+CREATE TABLE IF NOT EXISTS "ActivityLog" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "projectId" UUID REFERENCES "Project"(id) ON DELETE CASCADE,
     "userId" UUID NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
