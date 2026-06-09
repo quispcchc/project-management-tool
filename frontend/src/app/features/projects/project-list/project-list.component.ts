@@ -41,6 +41,8 @@ export class ProjectListComponent {
   saving = signal(false);
   error = signal('');
   isCreateModalOpen = signal(false);
+  isDeleteModalOpen = signal(false);
+  projectToDelete = signal<Project | null>(null);
 
   searchTerm = signal('');
   selectedStatus = signal<'All' | ProjectStatus>('All');
@@ -147,18 +149,29 @@ export class ProjectListComponent {
   }
 
   deleteProject(project: Project): void {
-    const confirmed = confirm(`Delete project "${project.name}"?`);
+    this.projectToDelete.set(project);
+    this.isDeleteModalOpen.set(true);
+  }
 
-    if (!confirmed) return;
+  confirmDelete(): void {
+    const project = this.projectToDelete();
+    if (!project) return;
 
     this.projectService.deleteProject(String(project.id)).subscribe({
       next: () => {
         this.projects.update(items => items.filter(item => item.id !== project.id));
+        this.closeDeleteModal();
       },
       error: () => {
         this.error.set('Unable to delete project.');
+        this.closeDeleteModal();
       }
     });
+  }
+
+  closeDeleteModal(): void {
+    this.isDeleteModalOpen.set(false);
+    this.projectToDelete.set(null);
   }
 
   setSearchTerm(event: Event): void {
