@@ -41,10 +41,14 @@ type ProjectDetail = {
   id: string;
   name: string;
   description?: string;
+  clientName?: string;
+  requirements?: string;
   status: string;
   displayStatus?: string;
   priority?: string;
   owner?: string;
+  startDate?: string;
+  endDate?: string;
   dueDate?: string;
   progress: number;
   totalTasks: number;
@@ -201,14 +205,16 @@ export class ProjectDetailComponent {
     return classes[status] || 'bg-slate-100 text-slate-700';
   }
 
-  getPriorityClass(priority: string): string {
+  getPriorityClass(priority?: string): string {
+    const normalizedPriority = priority || 'LOW';
+
     const classes: Record<string, string> = {
-      HIGH: 'bg-red-50 text-red-700',
       CRITICAL: 'bg-red-100 text-red-800',
-      MEDIUM: 'bg-orange-50 text-orange-700',
+      HIGH: 'bg-orange-50 text-orange-700',
+      MEDIUM: 'bg-teal-50 text-teal-700',
       LOW: 'bg-slate-100 text-slate-700'
     };
 
-    return classes[priority] || 'bg-slate-100 text-slate-700';
+    return classes[normalizedPriority] || classes['LOW'];
   }
 }
